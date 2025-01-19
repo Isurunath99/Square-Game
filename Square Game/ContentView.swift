@@ -38,32 +38,32 @@ struct ContentView: View {
             }
 
             if !shuffledColors.isEmpty {
-                Grid(alignment: .center, horizontalSpacing: 10, verticalSpacing: 10) {
-                    ForEach(0..<3, id: \ .self) { row in
-                        GridRow {
-                            ForEach(0..<3, id: \ .self) { column in
-                                let index = row * 3 + column
-                                let isSelected = selectedBoxes.contains(where: { $0.index == index })
-                                let isMatched = matchedPairs.contains(index)
-                                let color = isMatched || isSelected ? shuffledColors[index] : displayedColors[index]
-                                Rectangle()
-                                    .foregroundColor(color)
-                                    .frame(height: 100)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        Button(action: {
-                                            handleBoxTap(index: index)
-                                        }) {
-                                            Color.clear
+                            Grid(alignment: .center, horizontalSpacing: 10, verticalSpacing: 10) {
+                                ForEach(0..<3, id: \ .self) { row in
+                                    GridRow {
+                                        ForEach(0..<3, id: \ .self) { column in
+                                            let index = row * 3 + column
+                                            let isSelected = selectedBoxes.contains(where: { $0.index == index })
+                                            let isMatched = matchedPairs.contains(index)
+                                            let color = isMatched || isSelected ? shuffledColors[index] : displayedColors[index]
+                                            Rectangle()
+                                                .foregroundColor(color)
+                                                .frame(height: 100)
+                                                .cornerRadius(10)
+                                                .overlay(
+                                                    Button(action: {
+                                                        handleBoxTap(index: index)
+                                                    }) {
+                                                        Color.clear
+                                                    }
+                                                    .disabled(disabledBoxes.contains(index) || selectedBoxes.count == 2)
+                                                )
                                         }
-                                        .disabled(disabledBoxes.contains(index) || selectedBoxes.count == 2)
-                                    )
+                                    }
+                                }
                             }
+                            .padding()
                         }
-                    }
-                }
-                .padding()
-            }
 
             if gameOver {
                 Button("Restart Game") {
@@ -82,6 +82,7 @@ struct ContentView: View {
                 title: Text("Game Over"),
                 message: Text("You lost the game!"),
                 dismissButton: .default(Text("Restart"), action: {
+                    saveHighScore()
                     totalScore = 0 // Reset total score on game restart
                     startNewGame()
                 })
@@ -90,8 +91,8 @@ struct ContentView: View {
     }
 
     func startNewGame() {
-        shuffledColors = colors.shuffled() // Properly initialize here
-        displayedColors = shuffledColors // Show colors initially
+        shuffledColors = colors.shuffled()
+        displayedColors = shuffledColors
         selectedBoxes.removeAll()
         matchedPairs.removeAll()
         disabledBoxes.removeAll()
@@ -99,7 +100,6 @@ struct ContentView: View {
         gameOver = false
         countdown = 3
 
-        // Start the countdown timer
         Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
             if countdown > 0 {
                 countdown -= 1
@@ -129,6 +129,7 @@ struct ContentView: View {
                 totalScore += 1 // Increment total score immediately on correct match
                 displayedColors[firstBox.index] = firstBox.color.opacity(0.5)
                 displayedColors[secondBox.index] = secondBox.color.opacity(0.5)
+
                 if matchedPairs.count == 8 { // Only black box left
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         startNewGame()
@@ -136,16 +137,44 @@ struct ContentView: View {
                 }
             } else {
                 // Incorrect match
+                saveHighScore() // Save the current score on wrong pair
                 gameOver = true
             }
             selectedBoxes.removeAll()
         }
     }
+
+    func saveHighScore() {
+        guard totalScore > 0 else { return } // Save only if score is greater than 0
+
+        // Retrieve current high scores
+        var highScores = UserDefaults.standard.getHighScores(forKey: "highScores")
+        
+        // Check if the score already exists to avoid duplicates
+        if !highScores.contains(totalScore) {
+            highScores.append(totalScore)
+            highScores.sort(by: >) // Sort scores in descending order
+
+            // Keep only the top 10 scores
+            if highScores.count > 10 {
+                highScores = Array(highScores.prefix(10))
+            }
+
+            // Save the updated scores to UserDefaults
+            UserDefaults.standard.setHighScores(highScores, forKey: "highScores")
+            
+            // Debugging print
+            print("High Score Saved: \(totalScore)")
+        }
+    }
+
+
 }
 
 #Preview {
     ContentView()
 }
+
 
 
 
