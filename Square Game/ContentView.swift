@@ -10,18 +10,32 @@ import SwiftUI
 struct ContentView: View {
     @State private var colors: [Color] = [.red, .red, .yellow, .yellow, .green, .green, .blue, .blue, .black]
     @State private var shuffledColors: [Color] = []
+    @State private var displayedColors: [Color] = Array(repeating: .gray, count: 9)
     @State private var selectedBoxes: [(index: Int, color: Color)] = []
     @State private var matchedPairs: Set<Int> = []
     @State private var disabledBoxes: Set<Int> = []
     @State private var score: Int = 0
     @State private var totalScore: Int = 0
     @State private var gameOver: Bool = false
+    @State private var countdown: Int = 3
 
     var body: some View {
         VStack {
-            Text("Score: \(totalScore)")
+            Text("Memory Game")
                 .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.bottom, 10)
+
+            Text("Score: \(totalScore)")
+                .font(.title)
                 .padding()
+
+            if countdown > 0 {
+                Text("You have \(countdown) seconds of time remaining to memorize the colors")
+                    .foregroundColor(.red)
+                    .font(.headline)
+                    .padding()
+            }
 
             if !shuffledColors.isEmpty {
                 Grid(alignment: .center, horizontalSpacing: 10, verticalSpacing: 10) {
@@ -31,9 +45,9 @@ struct ContentView: View {
                                 let index = row * 3 + column
                                 let isSelected = selectedBoxes.contains(where: { $0.index == index })
                                 let isMatched = matchedPairs.contains(index)
-                                let color = shuffledColors[index]
+                                let color = isMatched || isSelected ? shuffledColors[index] : displayedColors[index]
                                 Rectangle()
-                                    .foregroundColor(isMatched || isSelected ? color.opacity(0.5) : color)
+                                    .foregroundColor(color)
                                     .frame(height: 100)
                                     .cornerRadius(10)
                                     .overlay(
@@ -53,7 +67,7 @@ struct ContentView: View {
 
             if gameOver {
                 Button("Restart Game") {
-                    totalScore = 0
+                    totalScore = 0 // Reset total score on game restart
                     startNewGame()
                 }
                 .padding()
@@ -77,17 +91,30 @@ struct ContentView: View {
 
     func startNewGame() {
         shuffledColors = colors.shuffled() // Properly initialize here
+        displayedColors = shuffledColors // Show colors initially
         selectedBoxes.removeAll()
         matchedPairs.removeAll()
         disabledBoxes.removeAll()
         score = 0
         gameOver = false
+        countdown = 3
+
+        // Start the countdown timer
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            if countdown > 0 {
+                countdown -= 1
+            } else {
+                timer.invalidate()
+                displayedColors = Array(repeating: .gray, count: 9)
+            }
+        }
     }
 
     func handleBoxTap(index: Int) {
         guard !disabledBoxes.contains(index) else { return }
         let color = shuffledColors[index]
         selectedBoxes.append((index, color))
+        displayedColors[index] = color // Show the color of the clicked square
         disabledBoxes.insert(index)
 
         if selectedBoxes.count == 2 {
@@ -100,12 +127,15 @@ struct ContentView: View {
                 matchedPairs.insert(secondBox.index)
                 score += 1
                 totalScore += 1 // Increment total score immediately on correct match
+                displayedColors[firstBox.index] = firstBox.color.opacity(0.5)
+                displayedColors[secondBox.index] = secondBox.color.opacity(0.5)
                 if matchedPairs.count == 8 { // Only black box left
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         startNewGame()
                     }
                 }
             } else {
+                // Incorrect match
                 gameOver = true
             }
             selectedBoxes.removeAll()
@@ -116,6 +146,8 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
+
+
 
 
 
