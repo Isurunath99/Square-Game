@@ -67,7 +67,7 @@ struct ContentView: View {
 
             if gameOver {
                 Button("Restart Game") {
-                    totalScore = 0 // Reset total score on game restart
+                    totalScore = 0
                     startNewGame()
                 }
                 .padding()
@@ -83,7 +83,7 @@ struct ContentView: View {
                 message: Text("You lost the game!"),
                 dismissButton: .default(Text("Restart"), action: {
                     saveHighScore()
-                    totalScore = 0 // Reset total score on game restart
+                    totalScore = 0
                     startNewGame()
                 })
             )
@@ -114,7 +114,7 @@ struct ContentView: View {
         guard !disabledBoxes.contains(index) else { return }
         let color = shuffledColors[index]
         selectedBoxes.append((index, color))
-        displayedColors[index] = color // Show the color of the clicked square
+        displayedColors[index] = color
         disabledBoxes.insert(index)
 
         if selectedBoxes.count == 2 {
@@ -126,18 +126,17 @@ struct ContentView: View {
                 matchedPairs.insert(firstBox.index)
                 matchedPairs.insert(secondBox.index)
                 score += 1
-                totalScore += 1 // Increment total score immediately on correct match
+                totalScore += 1
                 displayedColors[firstBox.index] = firstBox.color.opacity(0.5)
                 displayedColors[secondBox.index] = secondBox.color.opacity(0.5)
 
-                if matchedPairs.count == 8 { // Only black box left
+                if matchedPairs.count == 8 {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         startNewGame()
                     }
                 }
             } else {
-                // Incorrect match
-                saveHighScore() // Save the current score on wrong pair
+                saveHighScore()
                 gameOver = true
             }
             selectedBoxes.removeAll()
@@ -145,25 +144,20 @@ struct ContentView: View {
     }
 
     func saveHighScore() {
-        guard totalScore > 0 else { return } // Save only if score is greater than 0
+        guard totalScore > 0 else { return }
 
-        // Retrieve current high scores
         var highScores = UserDefaults.standard.getHighScores(forKey: "highScores")
         
-        // Check if the score already exists to avoid duplicates
         if !highScores.contains(totalScore) {
             highScores.append(totalScore)
-            highScores.sort(by: >) // Sort scores in descending order
+            highScores.sort(by: >)
 
-            // Keep only the top 10 scores
             if highScores.count > 10 {
                 highScores = Array(highScores.prefix(10))
             }
 
-            // Save the updated scores to UserDefaults
             UserDefaults.standard.setHighScores(highScores, forKey: "highScores")
-            
-            // Debugging print
+ 
             print("High Score Saved: \(totalScore)")
         }
     }

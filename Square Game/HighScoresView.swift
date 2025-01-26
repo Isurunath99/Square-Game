@@ -12,7 +12,7 @@ struct HighScoresView: View {
 
     var body: some View {
         VStack {
-            Text("High Scores")
+            Text("High scores so far !!!")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .padding()
@@ -33,7 +33,7 @@ struct HighScoresView: View {
         }
         .onAppear {
             highScores = UserDefaults.standard.getHighScores(forKey: "highScores")
-            print("High Scores Loaded: \(highScores)") // Debugging print
+            print("High Scores Loaded: \(highScores)") 
         }
         .padding()
     }
