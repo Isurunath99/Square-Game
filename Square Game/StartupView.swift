@@ -16,7 +16,7 @@ struct StartupView: View {
                     .fontWeight(.bold)
                     .padding()
 
-                NavigationLink(destination: ContentView()) {
+                NavigationLink(destination: GameModeSelectionView()) {
                     Text("Start Game")
                         .font(.title2)
                         .padding()
@@ -26,6 +26,7 @@ struct StartupView: View {
                         .cornerRadius(10)
                         .padding(.horizontal)
                 }
+
 
                 NavigationLink(destination: HighScoresView()) {
                     Text("High Scores")
